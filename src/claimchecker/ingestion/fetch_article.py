@@ -11,6 +11,7 @@ class ArticleFetchError(Exception):
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),
+    reraise = True
 )
 def fetch_html(url: str) -> str:
     """Download raw HTML for a URL, retrying on transient failures."""
