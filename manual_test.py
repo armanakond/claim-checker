@@ -12,7 +12,7 @@ print(f"Found {len(claims)} claims.\n")
 
 for i, claim in enumerate(claims, start=1):
     print(f"Claim {i}: {claim}")
-    evidence_list = search_evidence(claim, max_results=2)
+    evidence_list = search_evidence(claim, source_url=url, max_results=2)
 
     if not evidence_list:
         print("  No evidence found.\n")

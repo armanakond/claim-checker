@@ -1,10 +1,10 @@
 """Search for news evidence related to a claim."""
 
 import os
+from urllib.parse import urlparse
 
 import requests
 from dotenv import load_dotenv
-from claimchecker.retrieval.build_query import build_search_query
 
 load_dotenv()
 
@@ -16,12 +16,13 @@ class EvidenceSearchError(Exception):
     """Raised when evidence search fails."""
 
 
-def search_evidence(claim: str, max_results: int = 5) -> list[dict]:
-    """Search for news articles related to a claim, returning title/url/description."""
+def search_evidence(claim: str, source_url: str | None = None, max_results: int = 5) -> list[dict]:
+    """Search for news articles related to a claim, excluding the original source domain."""
     if not NEWS_API_KEY:
         raise EvidenceSearchError("NEWS_API_KEY is not set in the environment.")
 
-    query = build_search_query(claim) 
+    from claimchecker.retrieval.build_query import build_search_query
+    query = build_search_query(claim)
 
     params = {
         "q": query,
@@ -30,6 +31,10 @@ def search_evidence(claim: str, max_results: int = 5) -> list[dict]:
         "language": "en",
         "sortBy": "relevancy",
     }
+
+    if source_url:
+        domain = urlparse(source_url).netloc.replace("www.", "")
+        params["excludeDomains"] = domain
 
     response = requests.get(NEWS_API_URL, params=params, timeout=10)
 
