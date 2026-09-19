@@ -4,6 +4,7 @@ import os
 
 import requests
 from dotenv import load_dotenv
+from claimchecker.retrieval.build_query import build_search_query
 
 load_dotenv()
 
@@ -20,7 +21,7 @@ def search_evidence(claim: str, max_results: int = 5) -> list[dict]:
     if not NEWS_API_KEY:
         raise EvidenceSearchError("NEWS_API_KEY is not set in the environment.")
 
-    query = claim.replace('"', "")[:500] # Limit query length to 500 characters to avoid API issues
+    query = build_search_query(claim) 
 
     params = {
         "q": query,
