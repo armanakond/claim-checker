@@ -5,12 +5,14 @@ WORKDIR /app
 RUN pip install poetry
 
 COPY pyproject.toml poetry.lock ./
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-root
+COPY src ./src
 
-COPY . .
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-interaction
 
 RUN python -m spacy download en_core_web_sm
+
+COPY . .
 
 EXPOSE 8000
 
