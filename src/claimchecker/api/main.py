@@ -1,6 +1,9 @@
 """FastAPI application wiring together the full claim-checking pipeline."""
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from claimchecker.ingestion.fetch_article import extract_article_text, ArticleFetchError
 from claimchecker.extraction.filter_claims import extract_claims
@@ -8,14 +11,21 @@ from claimchecker.retrieval.search_evidence import search_evidence, EvidenceSear
 from claimchecker.verification.verify_claim import verify_claim
 from claimchecker.api.schemas import CheckArticleRequest, CheckArticleResponse, ClaimResult
 
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(title="Claim Checker API")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 @app.post("/check-article", response_model=CheckArticleResponse)
-def check_article(request: CheckArticleRequest) -> CheckArticleResponse:
+@limiter.limit("5/minute")
+def check_article(request: Request, body: CheckArticleRequest) -> CheckArticleResponse:
     """Fetch an article, extract claims, and verify each against retrieved evidence."""
+    article_url = str(body.url)
+
     try:
-        text = extract_article_text(request.url)
+        text = extract_article_text(article_url)
     except ArticleFetchError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
@@ -25,7 +35,7 @@ def check_article(request: CheckArticleRequest) -> CheckArticleResponse:
     for claim in claims:
         verdicts = []
         try:
-            evidence_list = search_evidence(claim, source_url=request.url, max_results=2)
+            evidence_list = search_evidence(claim, source_url=article_url, max_results=2)
         except EvidenceSearchError:
             evidence_list = []
 
@@ -40,4 +50,4 @@ def check_article(request: CheckArticleRequest) -> CheckArticleResponse:
 
         results.append(ClaimResult(claim=claim, verdicts=verdicts))
 
-    return CheckArticleResponse(url=request.url, claims=results)
+    return CheckArticleResponse(url=article_url, claims=results)

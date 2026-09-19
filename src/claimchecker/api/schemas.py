@@ -1,11 +1,11 @@
 """Request and response data shapes for the API."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 
 
 class CheckArticleRequest(BaseModel):
     """Incoming request: a URL to fact-check."""
-    url: str
+    url: HttpUrl
 
 
 class ClaimResult(BaseModel):
