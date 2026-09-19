@@ -2,7 +2,7 @@
 
 from transformers import pipeline
 
-nli_model = pipeline("text-classification", model="roberta-large-mnli")
+nli_model = pipeline("text-classification", model="typeform/distilbert-base-uncased-mnli")
 
 
 def verify_claim(claim: str, evidence: str) -> dict:
