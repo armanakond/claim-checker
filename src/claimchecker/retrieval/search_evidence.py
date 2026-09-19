@@ -20,8 +20,10 @@ def search_evidence(claim: str, max_results: int = 5) -> list[dict]:
     if not NEWS_API_KEY:
         raise EvidenceSearchError("NEWS_API_KEY is not set in the environment.")
 
+    query = claim.replace('"', "")[:500] # Limit query length to 500 characters to avoid API issues
+
     params = {
-        "q": claim,
+        "q": query,
         "apiKey": NEWS_API_KEY,
         "pageSize": max_results,
         "language": "en",
